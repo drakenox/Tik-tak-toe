@@ -1,79 +1,66 @@
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-  font-family: 'Orbitron', sans-serif;
-  background-color: #0c1d32;
-}
+document.addEventListener("DOMContentLoaded", () => {
+  const cells = document.querySelectorAll(".cell");
+  const message = document.getElementById("message");
+  const restartButton = document.getElementById("restartButton");
 
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
+  let currentPlayer = "X";
+  let board = ["", "", "", "", "", "", "", "", ""];
+  let gameEnded = false;
 
-.game-container {
-  text-align: center;
-  background-color: #0c1d32;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  padding: 30px;
-  border-radius: 10px;
-}
+  // ... (remaining JavaScript code from previous response)
 
-.board {
-  display: grid;
-  grid-template-columns: repeat(3, 100px);
-  grid-template-rows: repeat(3, 100px);
-  gap: 5px;
-  background-color: #1a1a1a;
-  border-radius: 5px;
-}
+  // Create the Three.js scene, camera, and renderer
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById("background").appendChild(renderer.domElement);
 
-.cell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 36px;
-  color: #fff;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
+  // Create the radio wave shader material
+  const waveShader = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0.0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      uniform float uTime;
+      void main() {
+        vec2 p = -1.0 + 2.0 * vUv;
+        float a = atan(p.y, p.x);
+        float d = length(p);
+        vec3 col = vec3(0.0);
+        col += 0.5 + 0.5 * cos(uTime + d + a);
+        col += 0.2 + 0.2 * cos(uTime + d * 3.0 + a);
+        col += 0.05 + 0.05 * cos(uTime + d * 5.0 + a);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
 
-.cell:hover {
-  background-color: #3a3a3a;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-}
+  // Create a plane for the radio wave background
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const waveBackground = new THREE.Mesh(geometry, waveShader);
+  scene.add(waveBackground);
 
-.message {
-  font-size: 24px;
-  margin-bottom: 10px;
-  color: #fff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
+  // Set the camera position
+  camera.position.z = 5;
 
-.restart-button {
-  font-size: 18px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  background-color: #f25a78;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  outline: none;
-}
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
 
-.restart-button:hover {
-  background-color: #f76c8c;
-}
+    // Update the uniform value for the shader
+    waveShader.uniforms.uTime.value += 0.02;
 
-.restart-button:active {
-  background-color: #dc2040;
-}
+    renderer.render(scene, camera);
+  }
+
+  animate();
+});
